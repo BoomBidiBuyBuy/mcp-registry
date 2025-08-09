@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 import os
 import logging
+import asyncio
 
 from fastmcp import FastMCP
 
@@ -28,7 +29,7 @@ logger.info("MCP Storage initialized")
 
 
 @mcp.tool
-def add_endpoint(endpoint: str, description: str) -> dict[str, Any]:
+async def add_endpoint(endpoint: str, description: str) -> dict[str, Any]:
     """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered.
 
     Args:
@@ -39,7 +40,7 @@ def add_endpoint(endpoint: str, description: str) -> dict[str, Any]:
     """
     logger.info("add_endpoint called", extra={"endpoint": endpoint})
     with SessionLocal() as db:
-        service = crud.create_or_update_service(
+        service = await crud.create_or_update_service(
             db, endpoint=endpoint, description=description
         )
         payload = _service_to_dict(service)
@@ -110,12 +111,14 @@ if __name__ == "__main__":
     host = os.getenv("MCP_HOST", "0.0.0.0")
     port = int(os.getenv("MCP_PORT", "8000"))
     logger.info("Starting MCP server", extra={"host": host, "port": port})
-    mcp.run(
-        transport="http",
-        host=host,
-        port=port,
-        reload=True,
-        log_level="info",
-        log_level_console="info",
-        log_level_file="info",
+    asyncio.run(
+        mcp.run_async(
+            transport="http",
+            host=host,
+            port=port,
+            reload=True,
+            log_level="info",
+            log_level_console="info",
+            log_level_file="info",
+        )
     )

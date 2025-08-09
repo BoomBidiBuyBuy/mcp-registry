@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
@@ -12,13 +11,13 @@ class DiscoveryClient:
         self.timeout_seconds = timeout_seconds
         self.logger = logging.getLogger("mcp_storage.discovery")
 
-    def fetch_tools(self, endpoint: str) -> list[dict]:
+    async def fetch_tools(self, endpoint: str) -> list[dict]:
         """
         Discover tools from a remote MCP service using fastmcp.Client.
         """
         try:
             self.logger.info("Discovering tools", extra={"endpoint": endpoint})
-            tools = asyncio.run(_fetch_tools_async(endpoint))
+            tools = await _fetch_tools_async(endpoint)
             self.logger.info(
                 "Discovery succeeded",
                 extra={"endpoint": endpoint, "tools_count": len(tools)},
