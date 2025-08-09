@@ -26,12 +26,10 @@ A FastAPI-based HTTP MCP registry that stores other MCP service endpoints, descr
 2. Run the MCP server (FastMCP):
 
    ```sh
-   uv run python -m mcp_storage.mcp_server
-   # or
-   uv run python -m mcp_storage
+   uv run python --env-file .env src/mcp_server.py
    ```
 
-   For FastMCP HTTP/SSE transport options, follow FastMCP docs.
+   It runs HTTP MCP server.
 
 ## Environment
 
