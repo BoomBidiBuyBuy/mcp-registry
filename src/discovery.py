@@ -47,7 +47,7 @@ class DiscoveryClient:
                 "Description fetched",
                 extra={"endpoint": endpoint, "description": description},
             )
-            return description
+            return description[0].text.strip()
         except Exception as exc:  # noqa: BLE001
             self.logger.error(
                 "Description fetch failed",
@@ -59,7 +59,7 @@ class DiscoveryClient:
         async with FastMCPClient(endpoint) as client:
             resources = await client.list_resources()
             for resource in resources:
-                if resource.name == "description":
+                if resource.name == "service_description":
                     return await client.read_resource(resource.uri)
 
         # if no description resource is found, return None

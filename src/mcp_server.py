@@ -41,17 +41,19 @@ async def add_endpoint(endpoint: str, context: Context) -> dict[str, Any]:
         service = await crud.create_or_update_service(
             db, endpoint=endpoint, context=context
         )
-        payload = _service_to_dict(service)
+        # payload = _service_to_dict(service)
         logger.info(
             "add_endpoint succeeded",
             extra={"service_id": service.id, "tools_count": len(service.tools)},
         )
-        return payload
+        # return only breif output to not littering into the context
+        return f"Create srvice with id='{service.id}'"
 
 
 @mcp.tool
 def list_services() -> list[dict[str, str]]:
     """List stored MCP services in the MCP Registry.
+    Helpful when need to find services that serve necessary tool.
 
     Returns:
         List of services with their endpoint and description.
