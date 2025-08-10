@@ -1,16 +1,25 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
+from fastmcp import Context
 
 import models
 from discovery import DiscoveryClient, DiscoveryError
 
 
 async def create_or_update_service(
-    db: Session, endpoint: str, description: str
+    db: Session, endpoint: str, context: Context
 ) -> models.MCPService:
     # Discover tools from endpoint
     client = DiscoveryClient()
     tools = await client.fetch_tools(str(endpoint))
+    description = await client.fetch_description(str(endpoint))
+    if description is None:
+        description = await context.elicit(
+            "Please provide a description for the MCP service",
+            response_type=str,
+        )
+        # TODO: in case of failure we can implement generated description using the sampling feature
+        # and the tools description
 
     # Check if service exists
     result = db.execute(

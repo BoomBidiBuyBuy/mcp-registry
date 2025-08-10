@@ -3,7 +3,7 @@ import os
 import logging
 import asyncio
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 
 from storage import get_engine_and_sessionmaker, init_db
 import crud
@@ -27,19 +27,19 @@ logger.info("MCP Storage initialized")
 
 
 @mcp.tool
-async def add_endpoint(endpoint: str, description: str) -> dict[str, Any]:
-    """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered.
+async def add_endpoint(endpoint: str, context: Context) -> dict[str, Any]:
+    """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered from the service.
+    Description is auto-discovered from the service, if not found, it will be asked to the user.
 
     Args:
         endpoint: The MCP server endpoint/URL.
-        description: Brief human readable description for this service.
 
     Returns: The created/updated service with tools.
     """
     logger.info("add_endpoint called", extra={"endpoint": endpoint})
     with SessionLocal() as db:
         service = await crud.create_or_update_service(
-            db, endpoint=endpoint, description=description
+            db, endpoint=endpoint, context=context
         )
         payload = _service_to_dict(service)
         logger.info(
