@@ -41,10 +41,10 @@ Provide `DATABASE_URL` to switch DB engine. Examples:
 
 ## MCP Tools Exposed
 
-- `add_endpoint(endpoint: str, description: str) -> service`: Registers/updates a service; tools auto-discovered
-- `list_endpoints() -> list[service]`: Lists stored services with tools
+- `add_endpoint(endpoint: str)`: Registers/updates a service; tools auto-discovered. Description comes from the `service_description` resource defined on the new MCP service.
+- `list_endpoints() -> list[service]`: Lists stored services with the description
 - `remove_service(service_id: int) -> bool`: Removes a service by id
-- `remove_tool(tool_id: int) -> bool`: Removes a single tool by id
+
 
 Discovery logic uses `fastmcp.Client` in `mcp_storage/discovery.py`.
 
