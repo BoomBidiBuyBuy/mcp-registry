@@ -27,20 +27,17 @@ logger.info("MCP Storage initialized")
 
 
 @mcp.tool
-async def add_endpoint(
-    endpoint: str, description: str, context: Context
-) -> dict[str, Any]:
+async def add_endpoint(endpoint: str, context: Context) -> str:
     """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered from the service.
 
     Args:
         endpoint: The MCP server endpoint/URL.
-        description: Description for the MCP service. Should be provided by the user.
     Returns: The created/updated service with tools.
     """
     logger.info("add_endpoint called", extra={"endpoint": endpoint})
     with SessionLocal() as db:
         service = await crud.create_or_update_service(
-            db, endpoint=endpoint, description=description, context=context
+            db, endpoint=endpoint, description="", context=context
         )
         # payload = _service_to_dict(service)
         logger.info(
@@ -48,7 +45,7 @@ async def add_endpoint(
             extra={"service_id": service.id, "tools_count": len(service.tools)},
         )
         # return only breif output to not littering into the context
-        return f"Create srvice with id='{service.id}'"
+        return f"Create service with id='{service.id}'"
 
 
 @mcp.tool
