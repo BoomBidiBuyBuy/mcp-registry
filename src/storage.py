@@ -25,7 +25,7 @@ def get_engine_and_sessionmaker() -> Tuple[object, sessionmaker]:
 
 
 def init_db(engine) -> None:
-    from .models import MCPService, MCPTool  # noqa: F401 - import to register models
+    from models import MCPService, MCPTool  # noqa: F401 - import to register models
 
     Base.metadata.create_all(bind=engine)
 

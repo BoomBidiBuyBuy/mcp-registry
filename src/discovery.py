@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 from typing import Any
 
 from fastmcp import Client as FastMCPClient
@@ -18,6 +19,7 @@ class DiscoveryClient:
         try:
             self.logger.info("Discovering tools", extra={"endpoint": endpoint})
             tools = await _fetch_tools_async(endpoint)
+
             self.logger.info(
                 "Discovery succeeded",
                 extra={"endpoint": endpoint, "tools_count": len(tools)},
@@ -49,3 +51,20 @@ async def _fetch_tools_async(endpoint: str) -> list[dict]:
 
 class DiscoveryError(RuntimeError):
     pass
+
+
+async def main():
+    # Introducde for testing purpose
+    import os
+
+    client = DiscoveryClient()
+
+    tools = await client.fetch_tools(os.environ.get("MCP_REMOTE_ENDPOINT"))
+
+    print(f"Available tools {tools}")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())

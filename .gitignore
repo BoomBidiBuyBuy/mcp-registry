@@ -23,6 +23,7 @@ venv/
 .idea/
 .vscode/
 *.code-workspace
+*.swp
 
 # OS
 .DS_Store

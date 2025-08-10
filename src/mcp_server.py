@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 import os
 import logging
@@ -7,13 +5,13 @@ import asyncio
 
 from fastmcp import FastMCP
 
-from .storage import get_engine_and_sessionmaker, init_db
-from . import crud
+from storage import get_engine_and_sessionmaker, init_db
+import crud
 
 
 mcp = FastMCP(
     name="mcp-storage",
-    description="A MCP registry that stores other MCP service endpoints, descriptions, and their available tools.",
+    instructions="The MCP registry that stores other MCP service endpoints, descriptions, and their available tools. Allows to manage them",
 )
 
 engine, SessionLocal = get_engine_and_sessionmaker()
@@ -111,14 +109,4 @@ if __name__ == "__main__":
     host = os.getenv("MCP_HOST", "0.0.0.0")
     port = int(os.getenv("MCP_PORT", "8000"))
     logger.info("Starting MCP server", extra={"host": host, "port": port})
-    asyncio.run(
-        mcp.run_async(
-            transport="http",
-            host=host,
-            port=port,
-            reload=True,
-            log_level="info",
-            log_level_console="info",
-            log_level_file="info",
-        )
-    )
+    asyncio.run(mcp.run_async(transport="http", host=host, port=port))

@@ -1,16 +1,16 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
 
-from . import models
-from .discovery import DiscoveryClient, DiscoveryError
+import models
+from discovery import DiscoveryClient, DiscoveryError
 
 
-def create_or_update_service(
+async def create_or_update_service(
     db: Session, endpoint: str, description: str
 ) -> models.MCPService:
     # Discover tools from endpoint
     client = DiscoveryClient()
-    tools = client.fetch_tools(str(endpoint))
+    tools = await client.fetch_tools(str(endpoint))
 
     # Check if service exists
     result = db.execute(
