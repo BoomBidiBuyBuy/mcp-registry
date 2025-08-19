@@ -67,10 +67,10 @@ def list_services(db: Session) -> list[models.MCPService]:
     return services
 
 
-def delete_service(db: Session, service_id: int) -> bool:
+def delete_service(db: Session, service_id: str) -> bool:
     # Delete service and cascade tools
     result = db.execute(
-        select(models.MCPService).where(models.MCPService.id == service_id)
+        select(models.MCPService).where(models.MCPService.id == int(service_id))
     )
     service = result.scalar_one_or_none()
     if service is None:
@@ -104,7 +104,7 @@ def list_services_brief(db: Session) -> list[dict[str, str]]:
 def get_tools(
     db: Session,
     *,
-    service_id: int | None = None,
+    service_id: str | None = None,
     endpoint: str | None = None,
 ) -> list[models.MCPTool]:
     """Return tools stored for a service, identified by id or endpoint.
@@ -118,11 +118,11 @@ def get_tools(
 
     if service_id is not None:
         service_stmt = select(models.MCPService).where(
-            models.MCPService.id == service_id
+            models.MCPService.id == int(service_id) if service_id else None
         )
     else:
         service_stmt = select(models.MCPService).where(
-            models.MCPService.endpoint == str(endpoint)
+            models.MCPService.endpoint == str(endpoint) if endpoint else None
         )
 
     service = db.execute(service_stmt).scalar_one_or_none()

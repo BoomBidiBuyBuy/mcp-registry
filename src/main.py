@@ -1,5 +1,4 @@
-from typing import Any
-import os
+from typing import Any, Annotated
 import logging
 import asyncio
 
@@ -7,9 +6,10 @@ from fastmcp import FastMCP, Context
 
 from storage import get_engine_and_sessionmaker, init_db
 import crud
+import envs
 
 
-mcp = FastMCP(
+mcp_server = FastMCP(
     name="mcp-storage",
     instructions="The MCP registry that stores other MCP service endpoints, descriptions, and their available tools. Allows to manage them",
 )
@@ -26,56 +26,52 @@ if not logging.getLogger().handlers:
 logger.info("MCP Storage initialized")
 
 
-@mcp.tool
-async def add_endpoint(endpoint: str, description: str, context: Context) -> str:
-    """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered from the service.
-
-    Args:
-        endpoint: The MCP server endpoint/URL.
-        description: The MCP service used specified description
-    Returns: The created/updated service with tools.
-    """
-    logger.info("add_endpoint called", extra={"endpoint": endpoint})
+@mcp_server.tool(tags=["admin"])
+async def add_endpoint(
+    endpoint: Annotated[str, "The MCP server endpoint/URL."],
+    description: Annotated[str, "The MCP service used specified description"],
+    context: Context,
+) -> Annotated[str, "The created/updated service with tools."]:
+    """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered from the service."""
+    logger.info(f"add_endpoint called endpoint={endpoint}")
     with SessionLocal() as db:
         service = await crud.create_or_update_service(
             db, endpoint=endpoint, description=description, context=context
         )
-        # payload = _service_to_dict(service)
+
         logger.info(
-            "add_endpoint succeeded",
-            extra={"service_id": service.id, "tools_count": len(service.tools)},
+            f"add_endpoint succeeded service_id={service.id}, tools_count={len(service.tools)}"
         )
         # return only breif output to not littering into the context
         return f"Create service with id='{service.id}'"
 
 
-@mcp.tool
-def list_services() -> list[dict[str, str]]:
+@mcp_server.tool(tags=["admin"])
+def list_services() -> Annotated[
+    list[dict[str, str]], "List of services with their endpoint and description."
+]:
     """List stored MCP services in the MCP Registry.
     Helpful when need to find services that serve necessary tool.
-
-    Returns:
-        List of services with their endpoint and description.
     """
     with SessionLocal() as db:
         items = crud.list_services_brief(db)
-        logger.info("list_services returned", extra={"count": len(items)})
+        logger.info(f"list_services returned count={len(items)}")
         return items
 
 
-@mcp.tool
-def remove_service(service_id: int) -> bool:
+@mcp_server.tool(tags=["admin"])
+def remove_service(
+    service_id: Annotated[str, "The MCP service id to remove"],
+) -> Annotated[str, "Status message of the operation"]:
     """Remove a stored MCP service by id from MCP Registry"""
-    logger.info("remove_service called", extra={"service_id": service_id})
+    logger.info(f"remove_service called service_id={service_id}")
     with SessionLocal() as db:
-        ok = crud.delete_service(db, service_id)
-        logger.info(
-            "remove_service result", extra={"service_id": service_id, "deleted": ok}
-        )
-        return ok
+        crud.delete_service(db, service_id)
+        logger.info(f"remove_service result service_id={service_id}")
+        return f"Service with id='{service_id}' removed"
 
 
-@mcp.tool
+@mcp_server.tool
 def get_tools(
     service_id: int | None = None, endpoint: str | None = None
 ) -> list[dict[str, Any]]:
@@ -89,25 +85,13 @@ def get_tools(
         items = [
             {"id": t.id, "name": t.name, "description": t.description} for t in tools
         ]
-        logger.info("get_tools returned", extra={"count": len(items)})
+        logger.info(f"get_tools returned count={len(items)}")
         return items
-
-
-def _service_to_dict(service) -> dict[str, Any]:
-    return {
-        "id": service.id,
-        "endpoint": service.endpoint,
-        "description": service.description,
-        "tools": [
-            {"id": t.id, "name": t.name, "description": t.description}
-            for t in service.tools
-        ],
-    }
 
 
 if __name__ == "__main__":
     # Default run method; FastMCP decides transport from env/cli
-    host = os.getenv("MCP_HOST", "0.0.0.0")
-    port = int(os.getenv("MCP_PORT", "8000"))
-    logger.info("Starting MCP server", extra={"host": host, "port": port})
-    asyncio.run(mcp.run_async(transport="http", host=host, port=port))
+    host = envs.MCP_HOST
+    port = int(envs.MCP_PORT)
+    logger.info(f"Starting MCP server host={host}, port={port}")
+    asyncio.run(mcp_server.run_async(transport="http", host=host, port=port))
