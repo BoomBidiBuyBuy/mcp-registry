@@ -26,7 +26,7 @@ A FastAPI-based HTTP MCP registry that stores other MCP service endpoints, descr
 2. Run the MCP server (FastMCP):
 
    ```sh
-   uv run python --env-file .env src/mcp_server.py
+   uv run python --env-file .env src/main.py
    ```
 
    It runs HTTP MCP server.
@@ -43,7 +43,7 @@ Provide `DATABASE_URL` to switch DB engine. Examples:
 
 - `add_endpoint(endpoint: str)`: Registers/updates a service; tools auto-discovered. Description comes from the `service_description` resource defined on the new MCP service.
 - `list_endpoints() -> list[service]`: Lists stored services with the description
-- `remove_service(service_id: int) -> bool`: Removes a service by id
+- `remove_service(service_id: str) -> bool`: Removes a service by id
 
 
 Discovery logic uses `fastmcp.Client` in `mcp_storage/discovery.py`.
