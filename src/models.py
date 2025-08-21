@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import Integer, String, DateTime, ForeignKey, UniqueConstraint
+from datetime import datetime, timezone
+from sqlalchemy import Integer, String, DateTime, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from storage import Base
 
@@ -10,11 +10,15 @@ class MCPService(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     endpoint: Mapped[str] = mapped_column(String(512), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
+    requires_authorization: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+        DateTime, default=datetime.now(timezone.utc), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
     )
 
     tools: Mapped[list["MCPTool"]] = relationship(

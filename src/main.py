@@ -30,13 +30,20 @@ logger.info("MCP Storage initialized")
 async def add_endpoint(
     endpoint: Annotated[str, "The MCP server endpoint/URL."],
     description: Annotated[str, "The MCP service used specified description"],
+    requires_authorization: Annotated[
+        bool, "Whether this service requires authorization"
+    ],
     context: Context,
 ) -> Annotated[str, "The created/updated service with tools."]:
     """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered from the service."""
     logger.info(f"add_endpoint called endpoint={endpoint}")
     with SessionLocal() as db:
         service = await crud.create_or_update_service(
-            db, endpoint=endpoint, description=description, context=context
+            db,
+            endpoint=endpoint,
+            description=description,
+            requires_authorization=requires_authorization,
+            context=context,
         )
 
         logger.info(
@@ -46,7 +53,7 @@ async def add_endpoint(
         return f"Create service with id='{service.id}'"
 
 
-@mcp_server.tool(tags=["admin"])
+@mcp_server.tool
 def list_services() -> Annotated[
     list[dict[str, str]], "List of services with their endpoint and description."
 ]:
@@ -61,7 +68,7 @@ def list_services() -> Annotated[
 
 @mcp_server.tool(tags=["admin"])
 def remove_service(
-    service_id: Annotated[str, "The MCP service id to remove"],
+    service_id: Annotated[int, "The MCP service id to remove"],
 ) -> Annotated[str, "Status message of the operation"]:
     """Remove a stored MCP service by id from MCP Registry"""
     logger.info(f"remove_service called service_id={service_id}")
@@ -72,16 +79,11 @@ def remove_service(
 
 
 @mcp_server.tool
-def get_tools(
-    service_id: int | None = None, endpoint: str | None = None
-) -> list[dict[str, Any]]:
+def get_tools(service_id: int) -> list[dict[str, Any]]:
     """Return stored tools for a MCP service in the MCP Registry identified by id or endpoint."""
-    logger.info(
-        "get_tools called",
-        extra={"service_id": service_id, "endpoint": endpoint},
-    )
+    logger.info(f"get_tools called service_id={service_id}")
     with SessionLocal() as db:
-        tools = crud.get_tools(db, service_id=service_id, endpoint=endpoint)
+        tools = crud.get_tools(db, service_id=service_id)
         items = [
             {"id": t.id, "name": t.name, "description": t.description} for t in tools
         ]

@@ -7,7 +7,11 @@ from discovery import DiscoveryClient, DiscoveryError
 
 
 async def create_or_update_service(
-    db: Session, endpoint: str, description: str, context: Context
+    db: Session,
+    endpoint: str,
+    description: str,
+    requires_authorization: bool,
+    context: Context,
 ) -> models.MCPService:
     # Discover tools from endpoint
     client = DiscoveryClient()
@@ -33,11 +37,16 @@ async def create_or_update_service(
     service = result.scalar_one_or_none()
 
     if service is None:
-        service = models.MCPService(endpoint=str(endpoint), description=description)
+        service = models.MCPService(
+            endpoint=str(endpoint),
+            description=description,
+            requires_authorization=requires_authorization,
+        )
         db.add(service)
         db.flush()  # populate service.id for tool FK
     else:
         service.description = description
+        service.requires_authorization = requires_authorization
         # Remove existing tools to replace with refreshed ones
         db.execute(
             delete(models.MCPTool).where(models.MCPTool.service_id == service.id)
@@ -67,10 +76,10 @@ def list_services(db: Session) -> list[models.MCPService]:
     return services
 
 
-def delete_service(db: Session, service_id: str) -> bool:
+def delete_service(db: Session, service_id: int) -> bool:
     # Delete service and cascade tools
     result = db.execute(
-        select(models.MCPService).where(models.MCPService.id == int(service_id))
+        select(models.MCPService).where(models.MCPService.id == service_id)
     )
     service = result.scalar_one_or_none()
     if service is None:
@@ -104,26 +113,11 @@ def list_services_brief(db: Session) -> list[dict[str, str]]:
 def get_tools(
     db: Session,
     *,
-    service_id: str | None = None,
-    endpoint: str | None = None,
+    service_id: int,
 ) -> list[models.MCPTool]:
-    """Return tools stored for a service, identified by id or endpoint.
+    """Return tools stored for a service, identified by id."""
 
-    Exactly one of service_id or endpoint must be provided.
-    """
-    if (service_id is None and endpoint is None) or (
-        service_id is not None and endpoint is not None
-    ):
-        raise ValueError("Provide exactly one of service_id or endpoint")
-
-    if service_id is not None:
-        service_stmt = select(models.MCPService).where(
-            models.MCPService.id == int(service_id) if service_id else None
-        )
-    else:
-        service_stmt = select(models.MCPService).where(
-            models.MCPService.endpoint == str(endpoint) if endpoint else None
-        )
+    service_stmt = select(models.MCPService).where(models.MCPService.id == service_id)
 
     service = db.execute(service_stmt).scalar_one_or_none()
     if service is None:

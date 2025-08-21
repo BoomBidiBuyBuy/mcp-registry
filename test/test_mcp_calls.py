@@ -18,6 +18,7 @@ async def test_add_endpoint(mocker):
             arguments={
                 "endpoint": "http://localhost:8000",
                 "description": "Test MCP service",
+                "requires_authorization": True,
             },
         )
     assert result.content[0].text == "Create service with id='1'"
@@ -26,6 +27,7 @@ async def test_add_endpoint(mocker):
         ANY,
         endpoint="http://localhost:8000",
         description="Test MCP service",
+        requires_authorization=True,
         context=ANY,
     )
 
@@ -58,8 +60,8 @@ async def test_remove_service(mocker):
         result = await client.call_tool(
             "remove_service",
             arguments={
-                "service_id": "service_123",
+                "service_id": 123,
             },
         )
-    assert result.content[0].text == "Service with id='service_123' removed"
-    patch.assert_called_once_with(ANY, "service_123")
+    assert result.content[0].text == "Service with id='123' removed"
+    patch.assert_called_once_with(ANY, 123)
