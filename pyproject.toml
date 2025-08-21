@@ -8,6 +8,8 @@ dependencies = [
     "sqlalchemy",
     "pymysql",
     "fastmcp",
+    "fastapi",
+    "uvicorn",
 ]
 
 [dependency-groups]
