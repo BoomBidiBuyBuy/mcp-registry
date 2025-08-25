@@ -120,6 +120,14 @@ def list_services() -> Annotated[
         return items
 
 
+@mcp_server.custom_route("/list_services", methods=["GET"])
+def http_list_services(request: Request):
+    logger.info("http_list_services called")
+    with SessionLocal() as db:
+        items = crud.list_services_brief(db)
+        return JSONResponse({"services": items})
+
+
 @mcp_server.tool(tags=["admin"])
 def remove_service(
     service_name: Annotated[str, "The MCP service name to remove"],

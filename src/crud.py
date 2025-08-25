@@ -86,11 +86,15 @@ def delete_service(db: Session, service_name: str) -> bool:
 def list_services_brief(db: Session) -> list[dict[str, str]]:
     """Return only endpoint and description for all services."""
     result = db.execute(
-        select(models.MCPService.endpoint, models.MCPService.description)
+        select(
+            models.MCPService.service_name,
+            models.MCPService.endpoint,
+            models.MCPService.description,
+        )
     )
     return [
-        {"endpoint": endpoint, "description": description}
-        for endpoint, description in result.all()
+        {"service_name": service_name, "endpoint": endpoint, "description": description}
+        for service_name, endpoint, description in result.all()
     ]
 
 
