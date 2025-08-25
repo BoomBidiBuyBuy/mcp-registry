@@ -125,7 +125,11 @@ def http_list_services(request: Request):
     logger.info("http_list_services called")
     with SessionLocal() as db:
         items = crud.list_services_brief(db)
-        return JSONResponse({"services": items})
+        result = {
+            service_name: {"transport": "streamable_http", "url": endpoint}
+            for service_name, endpoint, _ in items
+        }
+        return JSONResponse({"services": result})
 
 
 @mcp_server.tool(tags=["admin"])
