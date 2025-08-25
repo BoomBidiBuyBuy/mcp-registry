@@ -133,10 +133,13 @@ def list_services() -> Annotated[
 def http_list_services(request: Request):
     logger.info("http_list_services called")
     with SessionLocal() as db:
-        items = crud.list_services_brief(db)
+        services = crud.list_services_brief(db)
         result = {
-            service_name: {"transport": "streamable_http", "url": endpoint}
-            for service_name, endpoint, _ in items
+            service.service_name: {
+                "transport": "streamable_http",
+                "url": service.endpoint,
+            }
+            for service in services
         }
         return JSONResponse({"services": result})
 
