@@ -153,6 +153,14 @@ def remove_service(
     with SessionLocal() as db:
         crud.delete_service(db, service_name)
         logger.info(f"remove_service result service_name={service_name}")
+
+        # reread hook
+        if envs.AGENT_REREAD_HOOK:
+            logger.info("Let know agent that we have removed service")
+            with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+                response.raise_for_status()
+                logger.info(f"Agent reread hook called response={response.text}")
+
         return f"Service with name='{service_name}' removed"
 
 
