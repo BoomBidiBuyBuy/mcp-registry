@@ -135,9 +135,9 @@ def http_list_services(request: Request):
     with SessionLocal() as db:
         services = crud.list_services_brief(db)
         result = {
-            service.service_name: {
+            service["service_name"]: {
                 "transport": "streamable_http",
-                "url": service.endpoint,
+                "url": service["endpoint"],
             }
             for service in services
         }
