@@ -108,6 +108,33 @@ async def http_tools_for_role(request: Request):
 
 
 @mcp_server.tool(tags=["admin"])
+def create_role(role_name: str) -> Annotated[str, "The created/updated service with tools."]:
+    """Create a new role"""
+    logger.info(f"create_role called role_name={role_name}")
+    with SessionLocal() as db:
+        crud.create_role(db, role_name=role_name)
+    return f"Role with name='{role_name}' created"
+
+
+@mcp_server.tool(tags=["admin"])
+def assign_role_to_user(user_id: str, role_name: str) -> Annotated[str, "The assigned role."]:
+    """Assign a role to a user"""
+    logger.info(f"assign_role_to_user called user_id={user_id}, role_name={role_name}")
+    with SessionLocal() as db:
+        crud.assign_role_to_user(db, user_id=user_id, role_name=role_name)
+    return f"Role with name='{role_name}' assigned to user with id='{user_id}'"
+
+
+@mcp_server.tool(tags=["admin"])
+def list_users() -> Annotated[list[dict[str, str]], "List of users."]:
+    """List all users"""
+    logger.info("list_users called")
+    with SessionLocal() as db:
+        users = crud.list_users(db)
+    return users
+
+
+@mcp_server.tool(tags=["admin"])
 async def add_service(
     service_name: Annotated[str, "Unique service name"],
     endpoint: Annotated[str, "The MCP server endpoint/URL."],

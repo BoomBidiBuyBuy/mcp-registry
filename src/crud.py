@@ -356,6 +356,29 @@ def get_role_for_user(db: Session, *, user_id: str) -> models.MCPRole | None:
     return user.role
 
 
+def assign_role_to_user(db: Session, *, user_id: str, role_name: str) -> bool:
+    user = db.execute(
+        select(models.MCPUser).where(models.MCPUser.user_id == user_id)
+    ).scalar_one_or_none()
+    if user is None:
+        logger.info(f"User {user_id} does not exist, create a record")
+        raise ValueError(f"User {user_id} does not exist, create a record")
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        logger.info(f"Role {role_name} does not exist")
+        raise ValueError(f"Role {role_name} does not exist")
+    user.role = role
+    db.commit()
+    return True
+
+
+def list_users(db: Session) -> list[models.MCPUser]:
+    """List all users"""
+    return db.execute(select(models.MCPUser)).scalars().all()
+
+
 # Re-export new APIs
 __all__ += [
     "create_role",
