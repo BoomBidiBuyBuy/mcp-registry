@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 
 import models
@@ -242,16 +242,16 @@ __all__ = [
 # Roles CRUD
 
 
-def create_role(db: Session, *, name: str) -> models.MCPRole:
+def create_role(db: Session, *, role_name: str) -> models.MCPRole:
     """Create a new role by unique name.
 
     Raises ValueError if role already exists.
     """
-    stmt = select(models.MCPRole).where(models.MCPRole.name == name)
+    stmt = select(models.MCPRole).where(models.MCPRole.name == role_name)
     existing = db.execute(stmt).scalar_one_or_none()
     if existing is not None:
-        raise ValueError(f"Role with name '{name}' already exists")
-    role = models.MCPRole(name=name)
+        raise ValueError(f"Role with name '{role_name}' already exists")
+    role = models.MCPRole(name=role_name)
     db.add(role)
     db.commit()
     db.refresh(role)
@@ -375,8 +375,12 @@ def assign_role_to_user(db: Session, *, user_id: str, role_name: str) -> bool:
 
 
 def list_users(db: Session) -> list[models.MCPUser]:
-    """List all users"""
-    return db.execute(select(models.MCPUser)).scalars().all()
+    """List all users with roles eagerly loaded to avoid detached lazy loads."""
+    return (
+        db.execute(select(models.MCPUser).options(joinedload(models.MCPUser.role)))
+        .scalars()
+        .all()
+    )
 
 
 # Re-export new APIs
