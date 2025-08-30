@@ -119,7 +119,9 @@ def get_tools(
         .where(models.MCPService.service_name == service_name)
     )
 
-    service = db.execute(service_stmt).scalar_one_or_none()
+    # Using joined eager loads on collections requires Result.unique() to
+    # de-duplicate rows before calling scalar_one_or_none()/scalars().
+    service = db.execute(service_stmt).unique().scalar_one_or_none()
     if service is None:
         return []
     # Access relationship to ensure load
