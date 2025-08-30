@@ -292,7 +292,13 @@ def get_tools(service_name: str) -> list[dict[str, Any]]:
     with SessionLocal() as db:
         tools = crud.get_tools(db, service_name=service_name)
         items = [
-            {"id": t.id, "name": t.name, "description": t.description} for t in tools
+            {
+                "id": t.id,
+                "name": t.name,
+                "description": t.description,
+                "roles": [r.name for r in (t.roles or [])],
+            }
+            for t in tools
         ]
         logger.info(f"get_tools returned count={len(items)}")
         return items

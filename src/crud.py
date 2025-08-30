@@ -110,8 +110,13 @@ def get_tools(
 ) -> list[models.MCPTool]:
     """Return tools stored for a service, identified by unique service_name."""
 
-    service_stmt = select(models.MCPService).where(
-        models.MCPService.service_name == service_name
+    service_stmt = (
+        select(models.MCPService)
+        .options(
+            # Eager-load tools and their attached roles to avoid detached lazy loads
+            joinedload(models.MCPService.tools).joinedload(models.MCPTool.roles)
+        )
+        .where(models.MCPService.service_name == service_name)
     )
 
     service = db.execute(service_stmt).scalar_one_or_none()
