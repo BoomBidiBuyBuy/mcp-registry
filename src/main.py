@@ -76,7 +76,7 @@ async def http_health_check(request):
     return JSONResponse({"status": "healthy", "service": "mcp-server"})
 
 
-@mcp_server.custom_route("/role_for_user", methods=["GET"])
+@mcp_server.custom_route("/role_for_user", methods=["POST"])
 async def http_role_for_user(request: Request):
     logger.info("http_role_for_user called")
     data = request.json()
