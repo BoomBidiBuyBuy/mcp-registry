@@ -85,7 +85,8 @@ async def http_role_for_user(request: Request):
         raise HTTPException(status_code=400, detail="user_id is required")
 
     with SessionLocal() as db:
-        role = crud.get_role_for_user(db, user_id=user_id)
+        user = crud.get_or_create_user(db, user_id=user_id)
+        role = crud.get_role_for_user(db, user_id=user.id)
         if role is None:
             raise HTTPException(status_code=404, detail="Role not found")
 
