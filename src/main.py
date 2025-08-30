@@ -161,6 +161,30 @@ def list_users() -> Annotated[list[tuple[str, str]], "List of users with their r
 
 
 @mcp_server.tool(tags=["admin"])
+def attach_role_to_tool(
+    tool_id: int, role_name: str
+) -> Annotated[str, "The attached role."]:
+    """Attach a role to a tool"""
+    logger.info(f"attach_role_to_tool called tool_id={tool_id}, role_name={role_name}")
+    with SessionLocal() as db:
+        crud.attach_role_to_tool(db, tool_id=tool_id, role_name=role_name)
+    return f"Role with name='{role_name}' attached to tool with id='{tool_id}'"
+
+
+@mcp_server.tool(tags=["admin"])
+def detach_role_from_tool(
+    tool_id: int, role_name: str
+) -> Annotated[str, "The detached role."]:
+    """Detach a role from a tool"""
+    logger.info(
+        f"detach_role_from_tool called tool_id={tool_id}, role_name={role_name}"
+    )
+    with SessionLocal() as db:
+        crud.detach_role_from_tool(db, tool_id=tool_id, role_name=role_name)
+    return f"Role with name='{role_name}' detached from tool with id='{tool_id}'"
+
+
+@mcp_server.tool(tags=["admin"])
 def remove_role_from_user(
     user_id: str, role_name: str
 ) -> Annotated[str, "The removed role."]:

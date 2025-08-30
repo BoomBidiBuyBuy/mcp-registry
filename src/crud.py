@@ -277,6 +277,7 @@ def attach_role_to_tool(db: Session, *, role_name: str, tool_id: int) -> bool:
         raise ValueError(f"Tool with id '{tool_id}' not found")
 
     if role in tool.roles:
+        logger.info(f"Role {role_name} is already attached to tool {tool_id}")
         return False
     tool.roles.append(role)
     db.commit()
@@ -302,6 +303,7 @@ def detach_role_from_tool(db: Session, *, role_name: str, tool_id: int) -> bool:
         raise ValueError(f"Tool with id '{tool_id}' not found")
 
     if role not in tool.roles:
+        logger.info(f"Role {role_name} is not attached to tool {tool_id}")
         return False
     tool.roles.remove(role)
     db.commit()
