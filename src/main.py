@@ -32,9 +32,9 @@ logger.info("MCP Storage initialized")
 
 
 @mcp_server.custom_route("/token", methods=["GET"])
-def http_get_token(request: Request):
+async def http_get_token(request: Request):
     logger.info("http_get_token called")
-    data = request.json()
+    data = await request.json()
     service_name = data.get("service_name", "")
     user_id = data.get("user_id", "")
     if service_name == "" or user_id == "":
@@ -79,7 +79,7 @@ async def http_health_check(request):
 @mcp_server.custom_route("/role_for_user", methods=["POST"])
 async def http_role_for_user(request: Request):
     logger.info("http_role_for_user called")
-    data = request.json()
+    data = await request.json()
     user_id = data.get("user_id", "")
     if user_id == "":
         raise HTTPException(status_code=400, detail="user_id is required")
@@ -87,16 +87,16 @@ async def http_role_for_user(request: Request):
     with SessionLocal() as db:
         user = crud.get_or_create_user(db, user_id=user_id)
         role = crud.get_role_for_user(db, user_id=user.id)
-        if role is None:
-            raise HTTPException(status_code=404, detail="Role not found")
 
+    if role is None:
+        return JSONResponse({"role": ""})
     return JSONResponse({"role": role.name})
 
 
 @mcp_server.custom_route("/tools_for_role", methods=["POST"])
 async def http_tools_for_role(request: Request):
     logger.info("http_tools_for_role called")
-    data = request.json()
+    data = await request.json()
     role_name = data.get("role", "")
     if role_name == "":
         raise HTTPException(status_code=400, detail="role is required")

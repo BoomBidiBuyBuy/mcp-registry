@@ -1,8 +1,13 @@
+import logging
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 import models
 from discovery import DiscoveryClient, DiscoveryError
+
+
+logger = logging.getLogger(__name__)
 
 
 async def create_or_update_service(
@@ -121,6 +126,7 @@ def get_or_create_user(db: Session, *, user_id: str) -> models.MCPUser:
     stmt = select(models.MCPUser).where(models.MCPUser.user_id == user_id)
     user = db.execute(stmt).scalar_one_or_none()
     if user is None:
+        logger.info(f"User {user_id} does not exist, create a record")
         user = models.MCPUser(user_id=user_id)
         db.add(user)
         db.commit()
