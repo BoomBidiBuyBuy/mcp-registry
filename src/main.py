@@ -133,7 +133,13 @@ def list_users() -> Annotated[list[tuple[str, str]], "List of users with their r
     with SessionLocal() as db:
         users = crud.list_users(db)
 
-        return [(user.user_id, user.role.name) for user in users]
+        return [
+            (
+                user.user_id,
+                user.role.name if user.role else "(no role)"
+            )
+            for user in users
+        ]
 
 
 @mcp_server.tool(tags=["admin"])
