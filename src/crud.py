@@ -374,6 +374,20 @@ def assign_role_to_user(db: Session, *, user_id: str, role_name: str) -> bool:
     return True
 
 
+def remove_role_from_user(db: Session, *, user_id: str, role_name: str) -> bool:
+    user = db.execute(
+        select(models.MCPUser).where(models.MCPUser.user_id == user_id)
+    ).scalar_one_or_none()
+    if user is None:
+        logger.info(f"User {user_id} does not exist")
+        raise ValueError(f"User {user_id} does not exist")
+    if user.role is None:
+        logger.info(f"User {user_id} does not have a role")
+    user.role = None
+    db.commit()
+    return True
+
+
 def list_users(db: Session) -> list[models.MCPUser]:
     """List all users with roles eagerly loaded to avoid detached lazy loads."""
     return (

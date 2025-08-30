@@ -108,9 +108,7 @@ async def http_tools_for_role(request: Request):
 
 
 @mcp_server.tool(tags=["admin"])
-def create_role(
-    role_name: str,
-) -> Annotated[str, "The created/updated service with tools."]:
+def create_role(role_name: str) -> Annotated[str, "The created/updated service with tools."]:
     """Create a new role"""
     logger.info(f"create_role called role_name={role_name}")
     with SessionLocal() as db:
@@ -119,9 +117,7 @@ def create_role(
 
 
 @mcp_server.tool(tags=["admin"])
-def assign_role_to_user(
-    user_id: str, role_name: str
-) -> Annotated[str, "The assigned role."]:
+def assign_role_to_user(user_id: str, role_name: str) -> Annotated[str, "The assigned role."]:
     """Assign a role to a user"""
     logger.info(f"assign_role_to_user called user_id={user_id}, role_name={role_name}")
     with SessionLocal() as db:
@@ -129,16 +125,24 @@ def assign_role_to_user(
     return f"Role with name='{role_name}' assigned to user with id='{user_id}'"
 
 
+
 @mcp_server.tool(tags=["admin"])
-def list_users() -> Annotated[list[tuple[str, str]], "List of users."]:
+def list_users() -> Annotated[list[tuple[str, str]], "List of users with their roles"]:
     """List all users"""
     logger.info("list_users called")
     with SessionLocal() as db:
         users = crud.list_users(db)
-    return [
-        (user.user_id, user.role.name if user.role else "(no role yet)")
-        for user in users
-    ]
+
+        return [(user.user_id, user.role.name) for user in users]
+
+
+@mcp_server.tool(tags=["admin"])
+def remove_role_from_user(user_id: str, role_name: str) -> Annotated[str, "The removed role."]:
+    """Remove a role from a user"""
+    logger.info(f"remove_role_from_user called user_id={user_id}, role_name={role_name}")
+    with SessionLocal() as db:
+        crud.remove_role_from_user(db, user_id=user_id, role_name=role_name)
+    return f"Role with name='{role_name}' removed from user with id='{user_id}'"
 
 
 @mcp_server.tool(tags=["admin"])
