@@ -85,8 +85,9 @@ async def http_role_for_user(request: Request):
         raise HTTPException(status_code=400, detail="user_id is required")
 
     with SessionLocal() as db:
-        user = crud.get_or_create_user(db, user_id=user_id)
-        role = crud.get_role_for_user(db, user_id=user.id)
+        # Ensure the user exists, then fetch with correct lookup key (external user_id)
+        crud.get_or_create_user(db, user_id=user_id)
+        role = crud.get_role_for_user(db, user_id=user_id)
 
     if role is None:
         return JSONResponse({"role": ""})

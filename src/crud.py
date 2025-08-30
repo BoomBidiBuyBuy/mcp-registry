@@ -360,7 +360,9 @@ def get_role_for_user(db: Session, *, user_id: str) -> models.MCPRole | None:
     Returns None if user not found or has no role.
     """
     user = db.execute(
-        select(models.MCPUser).where(models.MCPUser.user_id == user_id)
+        select(models.MCPUser)
+        .options(joinedload(models.MCPUser.role))
+        .where(models.MCPUser.user_id == user_id)
     ).scalar_one_or_none()
     if user is None:
         return None
