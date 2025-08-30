@@ -231,3 +231,131 @@ __all__ = [
     "get_service_requires_authorization",
     "DiscoveryError",
 ]
+
+
+# Roles CRUD
+
+
+def create_role(db: Session, *, name: str) -> models.MCPRole:
+    """Create a new role by unique name.
+
+    Raises ValueError if role already exists.
+    """
+    stmt = select(models.MCPRole).where(models.MCPRole.name == name)
+    existing = db.execute(stmt).scalar_one_or_none()
+    if existing is not None:
+        raise ValueError(f"Role with name '{name}' already exists")
+    role = models.MCPRole(name=name)
+    db.add(role)
+    db.commit()
+    db.refresh(role)
+    return role
+
+
+def attach_role_to_tool(db: Session, *, role_name: str, tool_id: int) -> bool:
+    """Attach an existing role to a tool.
+
+    Returns True if attached, False if it was already attached.
+    Raises ValueError if role or tool not found.
+    """
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        raise ValueError(f"Role with name '{role_name}' not found")
+
+    tool = db.execute(
+        select(models.MCPTool).where(models.MCPTool.id == tool_id)
+    ).scalar_one_or_none()
+    if tool is None:
+        raise ValueError(f"Tool with id '{tool_id}' not found")
+
+    if role in tool.roles:
+        return False
+    tool.roles.append(role)
+    db.commit()
+    return True
+
+
+def detach_role_from_tool(db: Session, *, role_name: str, tool_id: int) -> bool:
+    """Detach a role from a tool.
+
+    Returns True if detached, False if it was not attached.
+    Raises ValueError if role or tool not found.
+    """
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        raise ValueError(f"Role with name '{role_name}' not found")
+
+    tool = db.execute(
+        select(models.MCPTool).where(models.MCPTool.id == tool_id)
+    ).scalar_one_or_none()
+    if tool is None:
+        raise ValueError(f"Tool with id '{tool_id}' not found")
+
+    if role not in tool.roles:
+        return False
+    tool.roles.remove(role)
+    db.commit()
+    return True
+
+
+def remove_role(db: Session, *, role_name: str) -> bool:
+    """Remove a role by name; it is also removed from all tools.
+
+    Returns False if role not found.
+    """
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        return False
+    # Ensure association rows are cleared even if FK cascades are not enforced
+    role.tools.clear()
+    # Also unset from users holding this role
+    for user in list(role.users):
+        user.role = None
+    db.delete(role)
+    db.commit()
+    return True
+
+
+def list_tools_by_role(db: Session, *, role_name: str) -> list[models.MCPTool]:
+    """List tools that can be used by the role.
+
+    Returns empty list if role not found or has no tools.
+    """
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        return []
+    # Access relationship to ensure load
+    _ = role.tools  # noqa: F841
+    return list(role.tools)
+
+
+def get_role_for_user(db: Session, *, user_id: str) -> models.MCPRole | None:
+    """Return the role for a user.
+
+    Returns None if user not found or has no role.
+    """
+    user = db.execute(
+        select(models.MCPUser).where(models.MCPUser.user_id == user_id)
+    ).scalar_one_or_none()
+    if user is None:
+        return None
+    return user.role
+
+
+# Re-export new APIs
+__all__ += [
+    "create_role",
+    "attach_role_to_tool",
+    "detach_role_from_tool",
+    "remove_role",
+    "list_tools_by_role",
+    "get_role_for_user",
+]

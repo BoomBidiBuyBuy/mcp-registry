@@ -76,6 +76,36 @@ async def http_health_check(request):
     return JSONResponse({"status": "healthy", "service": "mcp-server"})
 
 
+@mcp_server.custom_route("/role_for_user", methods=["GET"])
+async def http_role_for_user(request: Request):
+    logger.info("http_role_for_user called")
+    data = request.json()
+    user_id = data.get("user_id", "")
+    if user_id == "":
+        raise HTTPException(status_code=400, detail="user_id is required")
+
+    with SessionLocal() as db:
+        role = crud.get_role_for_user(db, user_id=user_id)
+        if role is None:
+            raise HTTPException(status_code=404, detail="Role not found")
+
+    return JSONResponse({"role": role.name})
+
+
+@mcp_server.custom_route("/tools_for_role", methods=["POST"])
+async def http_tools_for_role(request: Request):
+    logger.info("http_tools_for_role called")
+    data = request.json()
+    role_name = data.get("role", "")
+    if role_name == "":
+        raise HTTPException(status_code=400, detail="role is required")
+    with SessionLocal() as db:
+        tools = crud.get_tools_for_role(db, role_name=role_name)
+        if tools is None:
+            raise HTTPException(status_code=404, detail="Tools not found")
+    return JSONResponse({"tools": tools})
+
+
 @mcp_server.tool(tags=["admin"])
 async def add_service(
     service_name: Annotated[str, "Unique service name"],
