@@ -310,14 +310,16 @@ def detach_role_from_tool(db: Session, *, role_name: str, tool_id: int) -> bool:
 
 def remove_role(db: Session, *, role_name: str) -> bool:
     """Remove a role by name; it is also removed from all tools.
+    It is also removed from all users.
 
-    Returns False if role not found.
+    Raises ValueError if role not found.
     """
     role = db.execute(
         select(models.MCPRole).where(models.MCPRole.name == role_name)
     ).scalar_one_or_none()
     if role is None:
-        return False
+        logger.info(f"Role {role_name} does not exist")
+        raise ValueError(f"Role {role_name} does not exist")
     # Ensure association rows are cleared even if FK cascades are not enforced
     role.tools.clear()
     # Also unset from users holding this role
@@ -397,6 +399,11 @@ def list_users(db: Session) -> list[models.MCPUser]:
     )
 
 
+def list_roles(db: Session) -> list[models.MCPRole]:
+    """List all roles."""
+    return db.execute(select(models.MCPRole)).scalars().all()
+
+
 # Re-export new APIs
 __all__ += [
     "create_role",
@@ -405,4 +412,5 @@ __all__ += [
     "remove_role",
     "list_tools_by_role",
     "get_role_for_user",
+    "list_roles",
 ]
