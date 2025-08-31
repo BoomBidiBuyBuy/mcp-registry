@@ -100,19 +100,22 @@ async def http_tools_for_role(request: Request):
     data = await request.json()
     role_name = data.get("role", "")
     if role_name == "":
-        raise HTTPException(status_code=400, detail="role is required and should be non-empty")
+        raise HTTPException(
+            status_code=400, detail="role is required and should be non-empty"
+        )
     with SessionLocal() as db:
         tools = crud.list_tools_by_role(db, role_name=role_name)
 
     return JSONResponse(
-        {"tools": [
-            {
-                "id": t.id,
-                "name": t.name,
-                "description": t.description,
-            }
-            for t in tools
-        ]
+        {
+            "tools": [
+                {
+                    "id": t.id,
+                    "name": t.name,
+                    "description": t.description,
+                }
+                for t in tools
+            ]
         }
     )
 
