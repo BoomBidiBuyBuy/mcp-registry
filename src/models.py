@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Integer, String, DateTime, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from storage import Base
+from constants import DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
 
 
 class MCPService(Base):
@@ -63,6 +64,10 @@ class MCPRole(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    # Optional long string to set default system prompt for agents using this role
+    default_system_prompt: Mapped[str] = mapped_column(
+        String(DEFAULT_SYSTEM_PROMPT_MAX_LENGTH), default="", nullable=False
+    )
 
     # Reverse relationships
     tools: Mapped[list["MCPTool"]] = relationship(

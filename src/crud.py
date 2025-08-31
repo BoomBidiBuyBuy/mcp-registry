@@ -249,7 +249,9 @@ __all__ = [
 # Roles CRUD
 
 
-def create_role(db: Session, *, role_name: str) -> models.MCPRole:
+def create_role(
+    db: Session, *, role_name: str, default_system_prompt: str = ""
+) -> models.MCPRole:
     """Create a new role by unique name.
 
     Raises ValueError if role already exists.
@@ -258,7 +260,9 @@ def create_role(db: Session, *, role_name: str) -> models.MCPRole:
     existing = db.execute(stmt).scalar_one_or_none()
     if existing is not None:
         raise ValueError(f"Role with name '{role_name}' already exists")
-    role = models.MCPRole(name=role_name)
+    role = models.MCPRole(
+        name=role_name, default_system_prompt=default_system_prompt or ""
+    )
     db.add(role)
     db.commit()
     db.refresh(role)
@@ -415,6 +419,33 @@ def list_roles(db: Session) -> list[models.MCPRole]:
     return db.execute(select(models.MCPRole)).scalars().all()
 
 
+def set_role_default_system_prompt(
+    db: Session, *, role_name: str, default_system_prompt: str
+) -> bool:
+    """Set or update default system prompt for a role.
+
+    Returns True if updated. Raises ValueError if role not found.
+    """
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        raise ValueError(f"Role with name '{role_name}' not found")
+    role.default_system_prompt = default_system_prompt or ""
+    db.commit()
+    return True
+
+
+def get_role_default_system_prompt(db: Session, *, role_name: str) -> str:
+    """Get default system prompt for a role. Returns empty string if role not found."""
+    role = db.execute(
+        select(models.MCPRole).where(models.MCPRole.name == role_name)
+    ).scalar_one_or_none()
+    if role is None:
+        return ""
+    return role.default_system_prompt or ""
+
+
 # Re-export new APIs
 __all__ += [
     "create_role",
@@ -424,4 +455,6 @@ __all__ += [
     "list_tools_by_role",
     "get_role_for_user",
     "list_roles",
+    "set_role_default_system_prompt",
+    "get_role_default_system_prompt",
 ]
