@@ -1,6 +1,7 @@
 from typing import Any, Annotated
 import logging
 import asyncio
+import httpx
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -31,9 +32,9 @@ logger.info("MCP Storage initialized")
 
 
 @mcp_server.custom_route("/token", methods=["GET"])
-def http_get_token(request: Request):
+async def http_get_token(request: Request):
     logger.info("http_get_token called")
-    data = request.json()
+    data = await request.json()
     service_name = data.get("service_name", "")
     user_id = data.get("user_id", "")
     if service_name == "" or user_id == "":
@@ -75,6 +76,140 @@ async def http_health_check(request):
     return JSONResponse({"status": "healthy", "service": "mcp-server"})
 
 
+@mcp_server.custom_route("/role_for_user", methods=["POST"])
+async def http_role_for_user(request: Request):
+    logger.info("http_role_for_user called")
+    data = await request.json()
+    user_id = data.get("user_id", "")
+    if user_id == "":
+        raise HTTPException(status_code=400, detail="user_id is required")
+
+    with SessionLocal() as db:
+        # Ensure the user exists, then fetch with correct lookup key (external user_id)
+        crud.get_or_create_user(db, user_id=user_id)
+        role = crud.get_role_for_user(db, user_id=user_id)
+
+    if role is None:
+        return JSONResponse({"role": ""})
+    return JSONResponse({"role": role.name})
+
+
+@mcp_server.custom_route("/tools_for_role", methods=["POST"])
+async def http_tools_for_role(request: Request):
+    logger.info("http_tools_for_role called")
+    data = await request.json()
+    role_name = data.get("role", "")
+    if role_name == "":
+        raise HTTPException(
+            status_code=400, detail="role is required and should be non-empty"
+        )
+    with SessionLocal() as db:
+        tools = crud.list_tools_by_role(db, role_name=role_name)
+
+    return JSONResponse(
+        {
+            "tools": [
+                {
+                    "id": t.id,
+                    "name": t.name,
+                    "description": t.description,
+                }
+                for t in tools
+            ]
+        }
+    )
+
+
+@mcp_server.tool(tags=["admin"])
+def create_role(
+    role_name: str,
+) -> Annotated[str, "The created/updated service with tools."]:
+    """Create a new role"""
+    logger.info(f"create_role called role_name={role_name}")
+    with SessionLocal() as db:
+        crud.create_role(db, role_name=role_name)
+    return f"Role with name='{role_name}' created"
+
+
+@mcp_server.tool(tags=["admin"])
+def remove_role(role_name: str) -> Annotated[str, "The deleted role."]:
+    """Delete a role"""
+    logger.info(f"remove_role called role_name={role_name}")
+    with SessionLocal() as db:
+        crud.remove_role(db, role_name=role_name)
+    return f"Role with name='{role_name}' deleted"
+
+
+@mcp_server.tool(tags=["admin"])
+def list_roles() -> Annotated[list[str], "List of roles"]:
+    """List all roles"""
+    logger.info("list_roles called")
+    with SessionLocal() as db:
+        roles = crud.list_roles(db)
+        return [role.name for role in roles]
+
+
+@mcp_server.tool(tags=["admin"])
+def assign_role_to_user(
+    user_id: str, role_name: str
+) -> Annotated[str, "The assigned role."]:
+    """Assign a role to a user"""
+    logger.info(f"assign_role_to_user called user_id={user_id}, role_name={role_name}")
+    with SessionLocal() as db:
+        crud.assign_role_to_user(db, user_id=user_id, role_name=role_name)
+    return f"Role with name='{role_name}' assigned to user with id='{user_id}'"
+
+
+@mcp_server.tool(tags=["admin"])
+def list_users() -> Annotated[list[tuple[str, str]], "List of users with their roles"]:
+    """List all users"""
+    logger.info("list_users called")
+    with SessionLocal() as db:
+        users = crud.list_users(db)
+
+        return [
+            (user.user_id, user.role.name if user.role else "(no role)")
+            for user in users
+        ]
+
+
+@mcp_server.tool(tags=["admin"])
+def attach_role_to_tool(
+    tool_id: int, role_name: str
+) -> Annotated[str, "The attached role."]:
+    """Attach a role to a tool"""
+    logger.info(f"attach_role_to_tool called tool_id={tool_id}, role_name={role_name}")
+    with SessionLocal() as db:
+        crud.attach_role_to_tool(db, tool_id=tool_id, role_name=role_name)
+    return f"Role with name='{role_name}' attached to tool with id='{tool_id}'"
+
+
+@mcp_server.tool(tags=["admin"])
+def detach_role_from_tool(
+    tool_id: int, role_name: str
+) -> Annotated[str, "The detached role."]:
+    """Detach a role from a tool"""
+    logger.info(
+        f"detach_role_from_tool called tool_id={tool_id}, role_name={role_name}"
+    )
+    with SessionLocal() as db:
+        crud.detach_role_from_tool(db, tool_id=tool_id, role_name=role_name)
+    return f"Role with name='{role_name}' detached from tool with id='{tool_id}'"
+
+
+@mcp_server.tool(tags=["admin"])
+def remove_role_from_user(
+    user_id: str, role_name: str
+) -> Annotated[str, "The removed role."]:
+    """Remove a role from a user"""
+    logger.info(
+        f"remove_role_from_user called user_id={user_id}, role_name={role_name}"
+    )
+    with SessionLocal() as db:
+        crud.remove_role_from_user(db, user_id=user_id, role_name=role_name)
+    return f"Role with name='{role_name}' removed from user with id='{user_id}'"
+
+
 @mcp_server.tool(tags=["admin"])
 async def add_service(
     service_name: Annotated[str, "Unique service name"],
@@ -103,6 +238,14 @@ async def add_service(
         logger.info(
             f"add_service succeeded service_name={service.service_name}, tools_count={len(service.tools)}"
         )
+
+        # reread hook
+        if envs.AGENT_REREAD_HOOK:
+            logger.info("Let know agent that we have new service")
+            with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+                response.raise_for_status()
+                logger.info(f"Agent reread hook called response={response.text}")
+
         # return only breif output to not littering into the context
         return f"Create service with name='{service.service_name}'"
 
@@ -120,6 +263,21 @@ def list_services() -> Annotated[
         return items
 
 
+@mcp_server.custom_route("/list_services", methods=["GET"])
+def http_list_services(request: Request):
+    logger.info("http_list_services called")
+    with SessionLocal() as db:
+        services = crud.list_services_brief(db)
+        result = {
+            service["service_name"]: {
+                "transport": "streamable_http",
+                "url": service["endpoint"],
+            }
+            for service in services
+        }
+        return JSONResponse({"services": result})
+
+
 @mcp_server.tool(tags=["admin"])
 def remove_service(
     service_name: Annotated[str, "The MCP service name to remove"],
@@ -129,6 +287,14 @@ def remove_service(
     with SessionLocal() as db:
         crud.delete_service(db, service_name)
         logger.info(f"remove_service result service_name={service_name}")
+
+        # reread hook
+        if envs.AGENT_REREAD_HOOK:
+            logger.info("Let know agent that we have removed service")
+            with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+                response.raise_for_status()
+                logger.info(f"Agent reread hook called response={response.text}")
+
         return f"Service with name='{service_name}' removed"
 
 
@@ -139,7 +305,13 @@ def get_tools(service_name: str) -> list[dict[str, Any]]:
     with SessionLocal() as db:
         tools = crud.get_tools(db, service_name=service_name)
         items = [
-            {"id": t.id, "name": t.name, "description": t.description} for t in tools
+            {
+                "id": t.id,
+                "name": t.name,
+                "description": t.description,
+                "roles": [r.name for r in (t.roles or [])],
+            }
+            for t in tools
         ]
         logger.info(f"get_tools returned count={len(items)}")
         return items

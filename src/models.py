@@ -46,9 +46,53 @@ class MCPTool(Base):
 
     service: Mapped[MCPService] = relationship("MCPService", back_populates="tools")
 
+    # Optional roles that are allowed to use this tool
+    roles: Mapped[list["MCPRole"]] = relationship(
+        "MCPRole",
+        secondary="mcp_tool_roles",
+        back_populates="tools",
+    )
+
     __table_args__ = (
         UniqueConstraint("service_name", "name", name="uq_tool_per_service"),
     )
+
+
+class MCPRole(Base):
+    __tablename__ = "mcp_roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+    # Reverse relationships
+    tools: Mapped[list["MCPTool"]] = relationship(
+        "MCPTool",
+        secondary="mcp_tool_roles",
+        back_populates="roles",
+    )
+    users: Mapped[list["MCPUser"]] = relationship("MCPUser", back_populates="role")
+
+
+class MCPToolRole(Base):
+    __tablename__ = "mcp_tool_roles"
+    """Association (join) table between MCPTool and MCPRole.
+
+    This model backs the many-to-many relation used by `MCPTool.roles` and
+    `MCPRole.tools`. Application code typically manipulates those high-level
+    relationships; SQLAlchemy inserts/deletes rows here implicitly. The unique
+    constraint prevents duplicate tool-role pairs. CASCADE deletes ensure
+    associations are removed if the linked tool or role is deleted.
+    """
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    tool_id: Mapped[int] = mapped_column(
+        ForeignKey("mcp_tools.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("mcp_roles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    __table_args__ = (UniqueConstraint("tool_id", "role_id", name="uq_role_per_tool"),)
 
 
 class MCPUser(Base):
@@ -64,6 +108,15 @@ class MCPUser(Base):
     tokens: Mapped[list["UserAccessToken"]] = relationship(
         "UserAccessToken", cascade="all, delete-orphan", back_populates="user"
     )
+
+    # Optional single role for the user
+    role_id_fk: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("mcp_roles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    role: Mapped["MCPRole | None"] = relationship("MCPRole", back_populates="users")
 
 
 class UserAccessToken(Base):
