@@ -1,5 +1,7 @@
 import os
 from typing import Callable, Tuple
+from sqlalchemy import inspect, text
+from constants import DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
@@ -26,6 +28,21 @@ def get_engine_and_sessionmaker() -> Tuple[object, sessionmaker]:
 
 def init_db(engine) -> None:
     Base.metadata.create_all(bind=engine)
+    # Ensure new columns exist for backward compatibility without migrations
+    try:
+        insp = inspect(engine)
+        cols = [c.get("name") for c in insp.get_columns("mcp_roles")]
+        if "default_system_prompt" not in cols:
+            # Best-effort portable SQL; works for SQLite/MySQL/Postgres
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        f"ALTER TABLE mcp_roles ADD COLUMN default_system_prompt VARCHAR({DEFAULT_SYSTEM_PROMPT_MAX_LENGTH}) NOT NULL DEFAULT ''"
+                    )
+                )
+    except Exception:
+        # Do not crash startup if inspection/DDL fails; assume fresh DB
+        pass
 
 
 def get_db_session(SessionLocal: sessionmaker) -> Callable:

@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from storage import get_engine_and_sessionmaker, init_db, get_db_session
 import crud
 import envs
+from constants import DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
 
 
 mcp_server = FastMCP(
@@ -120,14 +121,44 @@ async def http_tools_for_role(request: Request):
     )
 
 
+@mcp_server.custom_route("/system_prompt_for_role", methods=["POST"])
+async def http_system_prompt_for_role(request: Request):
+    logger.info("http_system_prompt_for_role called")
+    data = await request.json()
+    role_name = data.get("role", "")
+    if role_name == "":
+        raise HTTPException(
+            status_code=400, detail="role is required and should be non-empty"
+        )
+    with SessionLocal() as db:
+        prompt = crud.get_role_default_system_prompt(db, role_name=role_name)
+    return JSONResponse({"default_system_prompt": prompt})
+
+
 @mcp_server.tool(tags=["admin"])
 def create_role(
     role_name: str,
-) -> Annotated[str, "The created/updated service with tools."]:
-    """Create a new role"""
-    logger.info(f"create_role called role_name={role_name}")
+    default_system_prompt: Annotated[
+        str,
+        "Optional default system prompt for agents using this role",
+    ] = "",
+) -> Annotated[str, "The created role."]:
+    """Create a new role with optional default system prompt"""
+    logger.info(
+        f"create_role called role_name={role_name}, has_prompt={bool(default_system_prompt)}"
+    )
+    if (
+        default_system_prompt
+        and len(default_system_prompt) > DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
+    ):
+        return (
+            f"Provided default_system_prompt length={len(default_system_prompt)} exceeds maximum "
+            f"{DEFAULT_SYSTEM_PROMPT_MAX_LENGTH} characters"
+        )
     with SessionLocal() as db:
-        crud.create_role(db, role_name=role_name)
+        crud.create_role(
+            db, role_name=role_name, default_system_prompt=default_system_prompt
+        )
     return f"Role with name='{role_name}' created"
 
 
@@ -141,12 +172,44 @@ def remove_role(role_name: str) -> Annotated[str, "The deleted role."]:
 
 
 @mcp_server.tool(tags=["admin"])
-def list_roles() -> Annotated[list[str], "List of roles"]:
-    """List all roles"""
+def list_roles() -> Annotated[
+    list[dict[str, str]], "List roles with default_system_prompt"
+]:
+    """List all roles with their default system prompt"""
     logger.info("list_roles called")
     with SessionLocal() as db:
         roles = crud.list_roles(db)
-        return [role.name for role in roles]
+        return [
+            {
+                "name": role.name,
+                "default_system_prompt": role.default_system_prompt or "",
+            }
+            for role in roles
+        ]
+
+
+@mcp_server.tool(tags=["admin"])
+def set_role_system_prompt(
+    role_name: Annotated[str, "Role name"],
+    default_system_prompt: Annotated[str, "New default system prompt"],
+) -> Annotated[str, "The updated role's system prompt"]:
+    """Set or update default system prompt for a role"""
+    logger.info(
+        f"set_role_system_prompt called role_name={role_name}, has_prompt={bool(default_system_prompt)}"
+    )
+    if (
+        default_system_prompt
+        and len(default_system_prompt) > DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
+    ):
+        return (
+            f"Provided default_system_prompt length={len(default_system_prompt)} exceeds maximum "
+            f"{DEFAULT_SYSTEM_PROMPT_MAX_LENGTH} characters"
+        )
+    with SessionLocal() as db:
+        crud.set_role_default_system_prompt(
+            db, role_name=role_name, default_system_prompt=default_system_prompt
+        )
+    return f"Default system prompt is set for role '{role_name}'"
 
 
 @mcp_server.tool(tags=["admin"])

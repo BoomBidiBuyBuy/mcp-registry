@@ -5,7 +5,7 @@ This document explains how users and roles are modeled and managed in the MCP Re
 ## Data model
 
 - User: a registered user in the MCP Registry, identified by external `user_id`. A user can have at most one role.
-- Role: a named permission label used to allow/deny access to tools. Role has a unique `name`.
+- Role: a named permission label used to allow/deny access to tools. Role has a unique `name` and optional `default_system_prompt` used by agents as a base system prompt for users with this role.
 - Service: a remote MCP service with unique `service_name`, `endpoint`, and `description`.
 - Tool: an MCP tool discovered under a `Service`. Each tool has a `name`, `description`, and optional list of allowed `roles`.
 
@@ -24,7 +24,7 @@ Notes:
 
 Use this when you need a new permission label.
 
-1. Call `create_role(role_name)`.
+1. Call `create_role(role_name, default_system_prompt="...")` to optionally set a default system prompt.
 2. If the role already exists, an error is returned.
 
 ## Assign a role to a user
@@ -59,7 +59,12 @@ Errors:
 
 ## List roles
 
-Use `list_roles()` to retrieve the list of role names.
+Use `list_roles()` to retrieve a list of objects with `name` and `default_system_prompt`.
+
+## Update default system prompt for a role
+
+- Call MCP tool `set_role_system_prompt(role_name, default_system_prompt)` to modify the prompt.
+- Agents can also fetch the prompt via HTTP `POST /system_prompt_for_role` with `{ "role": "<role>" }`.
 
 ## Agent integration: resolving allowed tools for a user
 

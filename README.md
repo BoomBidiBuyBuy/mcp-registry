@@ -56,7 +56,9 @@ Environment variables:
   - `authorize_user_to_service(service_name: str, user_id: str, token: str)` — Store/update a user token for a service requiring authorization.
 
 - Roles and users
-  - `create_role(role_name: str)` / `remove_role(role_name: str)` / `list_roles() -> list[str]`
+  - `create_role(role_name: str, default_system_prompt: str = "")` / `remove_role(role_name: str)` / `list_roles() -> list[dict]`
+  - `set_role_system_prompt(role_name: str, default_system_prompt: str)` — Update a role's default system prompt.
+  - `list_roles` now returns objects like `{ "name": "<role>", "default_system_prompt": "..." }`.
   - `assign_role_to_user(user_id: str, role_name: str)` / `remove_role_from_user(user_id: str, role_name: str)` / `list_users() -> list[tuple[user_id, role]]`
   - `attach_role_to_tool(tool_id: int, role_name: str)` / `detach_role_from_tool(tool_id: int, role_name: str)`
 
@@ -150,6 +152,19 @@ This endpoint lets an agent retrieve the stored token and authorization method f
 ```json
 { "tools": [{ "id": 1, "name": "...", "description": "..." }] }
 ```
+
+### Get default system prompt for a role
+
+- Method: POST
+- Path: `/system_prompt_for_role`
+- Request body (JSON): `{ "role": "<role-name>" }`
+- 200 Response:
+
+```json
+{ "default_system_prompt": "..." }
+```
+
+Agents can call this to extend their system prompt for users with the specified role.
 
 ## Authorization flow example
 
