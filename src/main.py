@@ -147,7 +147,10 @@ def create_role(
     logger.info(
         f"create_role called role_name={role_name}, has_prompt={bool(default_system_prompt)}"
     )
-    if default_system_prompt and len(default_system_prompt) > DEFAULT_SYSTEM_PROMPT_MAX_LENGTH:
+    if (
+        default_system_prompt
+        and len(default_system_prompt) > DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
+    ):
         return (
             f"Provided default_system_prompt length={len(default_system_prompt)} exceeds maximum "
             f"{DEFAULT_SYSTEM_PROMPT_MAX_LENGTH} characters"
@@ -194,7 +197,10 @@ def set_role_system_prompt(
     logger.info(
         f"set_role_system_prompt called role_name={role_name}, has_prompt={bool(default_system_prompt)}"
     )
-    if default_system_prompt and len(default_system_prompt) > DEFAULT_SYSTEM_PROMPT_MAX_LENGTH:
+    if (
+        default_system_prompt
+        and len(default_system_prompt) > DEFAULT_SYSTEM_PROMPT_MAX_LENGTH
+    ):
         return (
             f"Provided default_system_prompt length={len(default_system_prompt)} exceeds maximum "
             f"{DEFAULT_SYSTEM_PROMPT_MAX_LENGTH} characters"
