@@ -135,6 +135,18 @@ async def http_system_prompt_for_role(request: Request):
     return JSONResponse({"default_system_prompt": prompt})
 
 
+@mcp_server.custom_route("/create_user", methods=["POST"])
+async def http_create_user(request: Request):
+    logger.info("http_create_user called")
+    data = await request.json()
+    user_id = data.get("user_id", "")
+    if user_id == "":
+        raise HTTPException(status_code=400, detail="user_id is required")
+    with SessionLocal() as db:
+        crud.create_user(db, user_id=user_id)
+    return JSONResponse({"status": "user created"})
+
+
 @mcp_server.tool(tags=["admin"])
 def create_role(
     role_name: str,
