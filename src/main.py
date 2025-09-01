@@ -317,7 +317,8 @@ async def add_service(
         # reread hook
     if envs.AGENT_REREAD_HOOK:
         logger.info("Let know agent that we have new service")
-        with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+        with httpx.AsyncClient(base_url=envs.AGENT_REREAD_HOOK) as client:
+            response = await client.get()
             response.raise_for_status()
             logger.info(f"Agent reread hook called response={response.text}")
 
@@ -354,7 +355,7 @@ def http_list_services(request: Request):
 
 
 @mcp_server.tool(tags=["admin"])
-def remove_service(
+async def remove_service(
     service_name: Annotated[str, "The MCP service name to remove"],
 ) -> Annotated[str, "Status message of the operation"]:
     """Remove a stored MCP service by unique name from MCP Registry"""
@@ -366,7 +367,8 @@ def remove_service(
         # reread hook
     if envs.AGENT_REREAD_HOOK:
         logger.info("Let know agent that we have removed service")
-        with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+        with httpx.AsyncClient(base_url=envs.AGENT_REREAD_HOOK) as client:
+            response = await client.get()
             response.raise_for_status()
             logger.info(f"Agent reread hook called response={response.text}")
 
