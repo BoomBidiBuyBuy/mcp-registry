@@ -315,14 +315,14 @@ async def add_service(
         )
 
         # reread hook
-        if envs.AGENT_REREAD_HOOK:
-            logger.info("Let know agent that we have new service")
-            with httpx.get(envs.AGENT_REREAD_HOOK) as response:
-                response.raise_for_status()
-                logger.info(f"Agent reread hook called response={response.text}")
+    if envs.AGENT_REREAD_HOOK:
+        logger.info("Let know agent that we have new service")
+        with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+            response.raise_for_status()
+            logger.info(f"Agent reread hook called response={response.text}")
 
-        # return only breif output to not littering into the context
-        return f"Create service with name='{service.service_name}'"
+    # return only breif output to not littering into the context
+    return f"Create service with name='{service.service_name}'"
 
 
 @mcp_server.tool
@@ -364,13 +364,13 @@ def remove_service(
         logger.info(f"remove_service result service_name={service_name}")
 
         # reread hook
-        if envs.AGENT_REREAD_HOOK:
-            logger.info("Let know agent that we have removed service")
-            with httpx.get(envs.AGENT_REREAD_HOOK) as response:
-                response.raise_for_status()
-                logger.info(f"Agent reread hook called response={response.text}")
+    if envs.AGENT_REREAD_HOOK:
+        logger.info("Let know agent that we have removed service")
+        with httpx.get(envs.AGENT_REREAD_HOOK) as response:
+            response.raise_for_status()
+            logger.info(f"Agent reread hook called response={response.text}")
 
-        return f"Service with name='{service_name}' removed"
+    return f"Service with name='{service_name}' removed"
 
 
 @mcp_server.tool
