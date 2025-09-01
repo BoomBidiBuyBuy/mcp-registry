@@ -317,8 +317,8 @@ async def add_service(
         # reread hook
     if envs.AGENT_REREAD_HOOK:
         logger.info("Let know agent that we have new service")
-        with httpx.AsyncClient(base_url=envs.AGENT_REREAD_HOOK) as client:
-            response = await client.get()
+        async with httpx.AsyncClient() as client:
+            response = await client.get(envs.AGENT_REREAD_HOOK)
             response.raise_for_status()
             logger.info(f"Agent reread hook called response={response.text}")
 
@@ -367,8 +367,8 @@ async def remove_service(
         # reread hook
     if envs.AGENT_REREAD_HOOK:
         logger.info("Let know agent that we have removed service")
-        with httpx.AsyncClient(base_url=envs.AGENT_REREAD_HOOK) as client:
-            response = await client.get()
+        async with httpx.AsyncClient() as client:
+            response = await client.get(envs.AGENT_REREAD_HOOK)
             response.raise_for_status()
             logger.info(f"Agent reread hook called response={response.text}")
 
