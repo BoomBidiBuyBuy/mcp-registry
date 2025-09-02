@@ -19,7 +19,8 @@ async def test_health():
 @pytest.mark.asyncio
 async def test_register_user(mocker):
     mocker.patch(
-        "src.main.crud.get_or_create_user", return_value=MagicMock(user_id="test_user")
+        "src.http_endpoints.crud.get_or_create_user",
+        return_value=MagicMock(user_id="test_user"),
     )
     response = client.post("/register_user", json={"user_id": "test_user"})
     assert response.status_code == 200
@@ -29,7 +30,7 @@ async def test_register_user(mocker):
 @pytest.mark.asyncio
 async def test_list_services(mocker):
     mocker.patch(
-        "src.main.crud.list_services_brief",
+        "src.http_endpoints.crud.list_services_brief",
         return_value=[
             {
                 "service_name": "test_service",
