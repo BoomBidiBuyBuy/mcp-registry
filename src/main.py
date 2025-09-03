@@ -3,9 +3,9 @@ import asyncio
 
 from fastmcp import FastMCP
 
-from src.storage import get_engine_and_sessionmaker, init_db, get_db_session
+from storage import get_engine_and_sessionmaker, init_db, get_db_session
 
-import src.envs as envs
+import envs
 
 
 # Configure logging

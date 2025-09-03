@@ -37,6 +37,23 @@ def register(mcp_server):
                 crud.assign_role_to_user(db, user_id=user_id, role_name=role_name)
         return JSONResponse({"status": "user registered"})
 
+    @mcp_server.custom_route("/list_users", methods=["GET"])
+    async def http_list_users(request: Request):
+        logger.info("http_list_users called")
+        with SessionLocal() as db:
+            users = crud.list_users(db)
+            return JSONResponse(
+                {
+                    "users": [
+                        {
+                            user.user_id: {
+                                "role": user.role.name if user.role else ""
+                            }
+                        }
+                        for user in users
+                    ]
+                }
+            )
 
     ########################################################
     # Role-based access management
