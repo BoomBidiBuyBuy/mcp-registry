@@ -49,8 +49,8 @@ def register(mcp_server):
                             user.user_id: {
                                 "role": user.role.name if user.role else ""
                             }
+                            for user in users
                         }
-                        for user in users
                     ]
                 }
             )
