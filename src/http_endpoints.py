@@ -50,8 +50,8 @@ def register(mcp_server):
                                 "user_id": user.user_id,
                                 "role": user.role.name if user.role else ""
                             }
-                            for user in users
                         }
+                        for user in users
                     ]
                 }
             )
