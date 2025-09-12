@@ -48,7 +48,7 @@ def register(mcp_server):
                         {
                             "user": {
                                 "user_id": user.user_id,
-                                "role": user.role.name if user.role else ""
+                                "role": user.role.name if user.role else "",
                             }
                         }
                         for user in users
@@ -77,7 +77,6 @@ def register(mcp_server):
             return JSONResponse({"role": ""})
         return JSONResponse({"role": role.name})
 
-
     @mcp_server.custom_route("/tools_for_role", methods=["POST"])
     async def http_tools_for_role(request: Request):
         logger.info("http_tools_for_role called")
@@ -103,7 +102,6 @@ def register(mcp_server):
             }
         )
 
-
     @mcp_server.custom_route("/system_prompt_for_role", methods=["POST"])
     async def http_system_prompt_for_role(request: Request):
         logger.info("http_system_prompt_for_role called")
@@ -117,11 +115,9 @@ def register(mcp_server):
             prompt = crud.get_role_default_system_prompt(db, role_name=role_name)
         return JSONResponse({"default_system_prompt": prompt})
 
-
     ########################################################
     # Service management
     ########################################################
-
 
     @mcp_server.custom_route("/list_services", methods=["GET"])
     def http_list_services(request: Request):
@@ -137,11 +133,9 @@ def register(mcp_server):
             }
             return JSONResponse({"services": result})
 
-
     ########################################################
     # Token management
     ########################################################
-
 
     @mcp_server.custom_route("/token", methods=["GET"])
     async def http_get_token(request: Request):
@@ -154,7 +148,9 @@ def register(mcp_server):
                 status_code=400, detail="service_name and user_id are required"
             )
 
-        logger.info(f"http_get_token called service_name={service_name}, user_id={user_id}")
+        logger.info(
+            f"http_get_token called service_name={service_name}, user_id={user_id}"
+        )
 
         with SessionLocal() as db:
             # If service does not require authorization, return 200 OK without token

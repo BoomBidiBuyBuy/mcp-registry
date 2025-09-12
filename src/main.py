@@ -7,6 +7,9 @@ from storage import get_engine_and_sessionmaker, init_db, get_db_session
 
 import envs
 
+import http_endpoints
+import mcp_endpoints
+
 
 # Configure logging
 logger = logging.getLogger("mcp_storage")
@@ -26,10 +29,6 @@ mcp_server = FastMCP(
     name="mcp-storage",
     instructions="The MCP registry that stores other MCP service endpoints, descriptions, and their available tools. Allows to manage them",
 )
-
-
-import http_endpoints  
-import mcp_endpoints
 
 
 http_endpoints.register(mcp_server)

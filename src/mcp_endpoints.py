@@ -1,4 +1,3 @@
-
 from typing import Annotated, Any
 import crud
 import envs
@@ -10,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def register(mcp_server):
     from main import SessionLocal
 
@@ -18,7 +18,9 @@ def register(mcp_server):
     ########################################################
 
     @mcp_server.tool(tags=["admin"])
-    def list_users() -> Annotated[list[tuple[str, str]], "List of users with their roles"]:
+    def list_users() -> Annotated[
+        list[tuple[str, str]], "List of users with their roles"
+    ]:
         """List all users"""
         logger.info("list_users called")
         with SessionLocal() as db:
@@ -59,7 +61,6 @@ def register(mcp_server):
             )
         return f"Role with name='{role_name}' created"
 
-
     @mcp_server.tool(tags=["admin"])
     def list_roles() -> Annotated[
         list[dict[str, str]], "List roles with default_system_prompt"
@@ -76,7 +77,6 @@ def register(mcp_server):
                 for role in roles
             ]
 
-
     @mcp_server.tool(tags=["admin"])
     def remove_role(role_name: str) -> Annotated[str, "The deleted role."]:
         """Delete a role"""
@@ -84,7 +84,6 @@ def register(mcp_server):
         with SessionLocal() as db:
             crud.remove_role(db, role_name=role_name)
         return f"Role with name='{role_name}' deleted"
-
 
     @mcp_server.tool(tags=["admin"])
     def set_role_system_prompt(
@@ -109,17 +108,17 @@ def register(mcp_server):
             )
         return f"Default system prompt is set for role '{role_name}'"
 
-
     @mcp_server.tool(tags=["admin"])
     def assign_role_to_user(
         user_id: str, role_name: str
     ) -> Annotated[str, "The assigned role."]:
         """Assign a role to a user"""
-        logger.info(f"assign_role_to_user called user_id={user_id}, role_name={role_name}")
+        logger.info(
+            f"assign_role_to_user called user_id={user_id}, role_name={role_name}"
+        )
         with SessionLocal() as db:
             crud.assign_role_to_user(db, user_id=user_id, role_name=role_name)
         return f"Role with name='{role_name}' assigned to user with id='{user_id}'"
-
 
     @mcp_server.tool(tags=["admin"])
     def remove_role_from_user(
@@ -133,17 +132,17 @@ def register(mcp_server):
             crud.remove_role_from_user(db, user_id=user_id, role_name=role_name)
         return f"Role with name='{role_name}' removed from user with id='{user_id}'"
 
-
     @mcp_server.tool(tags=["admin"])
     def attach_role_to_tool(
         tool_id: int, role_name: str
     ) -> Annotated[str, "The attached role."]:
         """Attach a role to a tool"""
-        logger.info(f"attach_role_to_tool called tool_id={tool_id}, role_name={role_name}")
+        logger.info(
+            f"attach_role_to_tool called tool_id={tool_id}, role_name={role_name}"
+        )
         with SessionLocal() as db:
             crud.attach_role_to_tool(db, tool_id=tool_id, role_name=role_name)
         return f"Role with name='{role_name}' attached to tool with id='{tool_id}'"
-
 
     @mcp_server.tool(tags=["admin"])
     def detach_role_from_tool(
@@ -175,7 +174,9 @@ def register(mcp_server):
         ] = "",
     ) -> Annotated[str, "The created/updated service with tools."]:
         """Register or update an MCP service endpoint into MCP Registry; tools are auto-discovered from the service."""
-        logger.info(f"add_service called service_name={service_name} endpoint={endpoint}")
+        logger.info(
+            f"add_service called service_name={service_name} endpoint={endpoint}"
+        )
         with SessionLocal() as db:
             service = await crud.create_or_update_service(
                 db,
@@ -201,7 +202,6 @@ def register(mcp_server):
         # return only breif output to not littering into the context
         return f"Create service with name='{service.service_name}'"
 
-
     @mcp_server.tool
     def list_services() -> Annotated[
         list[dict[str, str]], "List of services with their endpoint and description."
@@ -213,7 +213,6 @@ def register(mcp_server):
             items = crud.list_services_brief(db)
             logger.info(f"list_services returned count={len(items)}")
             return items
-
 
     @mcp_server.tool(tags=["admin"])
     async def remove_service(
@@ -235,7 +234,6 @@ def register(mcp_server):
 
         return f"Service with name='{service_name}' removed"
 
-
     @mcp_server.tool
     def get_tools(service_name: str) -> list[dict[str, Any]]:
         """Return stored tools for a MCP service in the MCP Registry identified by unique service name."""
@@ -253,7 +251,6 @@ def register(mcp_server):
             ]
             logger.info(f"get_tools returned count={len(items)}")
             return items
-
 
     ########################################################
     # Authorization management
