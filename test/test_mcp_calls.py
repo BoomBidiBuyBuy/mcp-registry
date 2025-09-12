@@ -10,7 +10,7 @@ from src.main import mcp_server
 @pytest.mark.asyncio
 async def test_add_service(mocker):
     create_patch = mocker.patch(
-        "src.main.crud.create_or_update_service",
+        "src.mcp_endpoints.crud.create_or_update_service",
         return_value=MagicMock(service_name="svc1", tools=[]),
     )
     async with Client(mcp_server) as client:
@@ -39,7 +39,7 @@ async def test_add_service(mocker):
 @pytest.mark.asyncio
 async def test_list_services(mocker):
     patch = mocker.patch(
-        "src.main.crud.list_services_brief",
+        "src.mcp_endpoints.crud.list_services_brief",
         return_value=[
             {"endpoint": "http://localhost:8000", "description": "Test MCP service"}
         ],
@@ -59,7 +59,7 @@ async def test_list_services(mocker):
 
 @pytest.mark.asyncio
 async def test_remove_service(mocker):
-    patch = mocker.patch("src.main.crud.delete_service")
+    patch = mocker.patch("src.mcp_endpoints.crud.delete_service")
     async with Client(mcp_server) as client:
         result = await client.call_tool(
             "remove_service",

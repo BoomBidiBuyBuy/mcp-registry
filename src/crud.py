@@ -133,11 +133,13 @@ def get_or_create_user(db: Session, *, user_id: str) -> models.MCPUser:
     stmt = select(models.MCPUser).where(models.MCPUser.user_id == user_id)
     user = db.execute(stmt).scalar_one_or_none()
     if user is None:
-        logger.info(f"User {user_id} does not exist, create a record")
+        logger.info(f"User {user_id} does not exist, register a record")
         user = models.MCPUser(user_id=user_id)
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        logger.info(f"User {user_id} already exists")
     return user
 
 
